@@ -1,28 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:meals_app/models/filters.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:meals_app/providers/filters_provider.dart';
 import 'package:meals_app/widgets/filter_item.dart';
 
-class FiltersScreen extends StatefulWidget {
-  const FiltersScreen({
-    super.key,
-    required this.currentFilters,
-  });
-
-  final Map<String, bool> currentFilters;
+class FiltersScreen extends ConsumerStatefulWidget {
+  const FiltersScreen({super.key});
 
   @override
-  State<StatefulWidget> createState() {
+  ConsumerState<FiltersScreen> createState() {
     return _FiltersScreenState();
   }
 }
 
-class _FiltersScreenState extends State<FiltersScreen> {
+class _FiltersScreenState extends ConsumerState<FiltersScreen> {
+  var _glutenFreeFilterSet = false;
+  var _lactoseFreeFilterSet = false;
+  var _vegetarianFilterSet = false;
+  var _veganFilterSet = false;
+
   @override
   void initState() {
     super.initState();
-    for (var filter in AvailableFilters) {
-      filter.setIsActive(widget.currentFilters[filter.title] ?? false);
-    }
+    final activeFilters = ref.read(filtersProvider);
+    _glutenFreeFilterSet = activeFilters[Filter.glutenFree]!;
+    _lactoseFreeFilterSet = activeFilters[Filter.lactoseFree]!;
+    _vegetarianFilterSet = activeFilters[Filter.vegetarian]!;
+    _veganFilterSet = activeFilters[Filter.vegan]!;
   }
 
   @override
@@ -33,24 +37,56 @@ class _FiltersScreenState extends State<FiltersScreen> {
       ),
       body: WillPopScope(
         onWillPop: () async {
-          Navigator.of(context).pop({
-            for (var filter in AvailableFilters) filter.title: filter.isActive
+          ref.read(filtersProvider.notifier).setFilters({
+            Filter.glutenFree: _glutenFreeFilterSet,
+            Filter.lactoseFree: _lactoseFreeFilterSet,
+            Filter.vegetarian: _vegetarianFilterSet,
+            Filter.vegan: _veganFilterSet,
           });
-          return false;
+          return true;
         },
         child: Column(
           children: [
-            for (final filter in AvailableFilters)
-              FilterItem(
-                isFilterSet: filter.isActive,
-                onSetFilter: (active) {
-                  setState(() {
-                    filter.setIsActive(active);
-                  });
-                },
-                title: filter.title,
-                subtitle: filter.subtitle,
-              ),
+            FilterItem(
+              isFilterSet: _glutenFreeFilterSet,
+              onSetFilter: (active) {
+                setState(() {
+                  _glutenFreeFilterSet = active;
+                });
+              },
+              title: 'Gluten-free',
+              subtitle: 'Only include gluten-free meals.',
+            ),
+            FilterItem(
+              isFilterSet: _lactoseFreeFilterSet,
+              onSetFilter: (active) {
+                setState(() {
+                  _lactoseFreeFilterSet = active;
+                });
+              },
+              title: 'Lactose-free',
+              subtitle: 'Only include lactose-free meals.',
+            ),
+            FilterItem(
+              isFilterSet: _vegetarianFilterSet,
+              onSetFilter: (active) {
+                setState(() {
+                  _vegetarianFilterSet = active;
+                });
+              },
+              title: 'Vegetarian',
+              subtitle: 'Only include vegetarian meals.',
+            ),
+            FilterItem(
+              isFilterSet: _veganFilterSet,
+              onSetFilter: (active) {
+                setState(() {
+                  _veganFilterSet = active;
+                });
+              },
+              title: 'Vegan',
+              subtitle: 'Only include vegan meals.',
+            ),
           ],
         ),
       ),
